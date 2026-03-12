@@ -1,0 +1,5 @@
+{
+  "name": "MangaAI",
+  "description": "AI-driven SaaS platform for personalized manga recommendations using the Anilist API.",
+  "requestFramePermissions": []
+}

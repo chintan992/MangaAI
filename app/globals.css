@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --spacing-safe-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pb-safe {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+@utility scrollbar-hide {
+  /* IE and Edge */
+  -ms-overflow-style: none;
+  /* Firefox */
+  scrollbar-width: none;
+  /* Safari and Chrome */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
