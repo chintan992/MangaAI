@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Manga } from '@/lib/anilist';
 import { useUser, Rating } from '@/lib/user-context';
 import { X, Heart, Star, BookOpen, Layers, Loader2, Sparkles } from 'lucide-react';
@@ -19,6 +19,14 @@ export function MangaDetailsModal({ manga, onClose, onSelectRelated }: MangaDeta
 
   const [quickPitch, setQuickPitch] = useState<string | null>(null);
   const [isFetchingPitch, setIsFetchingPitch] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   if (!manga) return null;
 
@@ -53,7 +61,7 @@ export function MangaDetailsModal({ manga, onClose, onSelectRelated }: MangaDeta
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative flex w-full max-h-[90vh] max-w-4xl flex-col overflow-hidden rounded-3xl bg-[#1A1A1A] shadow-2xl md:flex-row border border-white/10"
+          className="relative flex w-full max-h-[90vh] max-w-4xl flex-col overflow-hidden rounded-3xl glass-panel shadow-2xl md:flex-row"
         >
           <button
             onClick={onClose}
@@ -67,6 +75,7 @@ export function MangaDetailsModal({ manga, onClose, onSelectRelated }: MangaDeta
               src={imageUrl}
               alt={title}
               fill
+              sizes="(max-width: 768px) 100vw, 40vw"
               className="object-cover"
               referrerPolicy="no-referrer"
             />
@@ -187,6 +196,7 @@ export function MangaDetailsModal({ manga, onClose, onSelectRelated }: MangaDeta
                           src={edge.node.coverImage.large || edge.node.coverImage.medium}
                           alt={edge.node.title.english || edge.node.title.romaji}
                           fill
+                          sizes="128px"
                           className="object-cover transition-transform group-hover:scale-105"
                         />
                       </div>
@@ -220,6 +230,7 @@ export function MangaDetailsModal({ manga, onClose, onSelectRelated }: MangaDeta
                           src={rec.mediaRecommendation.coverImage.large || rec.mediaRecommendation.coverImage.medium}
                           alt={rec.mediaRecommendation.title.english || rec.mediaRecommendation.title.romaji}
                           fill
+                          sizes="128px"
                           className="object-cover transition-transform group-hover:scale-105"
                         />
                       </div>

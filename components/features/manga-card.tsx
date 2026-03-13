@@ -35,6 +35,7 @@ export function MangaCard({ manga, onClick, compact = false }: MangaCardProps) {
         src={imageUrl}
         alt={title}
         fill
+        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
         className="object-cover transition-transform duration-700 lg:group-hover:scale-110 lg:group-hover:rotate-1"
         referrerPolicy="no-referrer"
       />
@@ -59,10 +60,10 @@ export function MangaCard({ manga, onClick, compact = false }: MangaCardProps) {
           </div>
           <button
             onClick={handleLikeClick}
-            className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md transition-all duration-300 hover:scale-110 border shadow-lg ${
+            className={`flex h-8 w-8 items-center justify-center rounded-full glass-panel-interactive transition-all duration-300 hover:scale-110 shadow-lg ${
               liked 
                 ? 'bg-rose-500/20 border-rose-500/30' 
-                : 'bg-black/60 border-white/10 hover:bg-rose-500/20 hover:border-rose-500/30'
+                : 'hover:bg-rose-500/20 hover:border-rose-500/30'
             }`}
           >
             <Heart className={`h-4 w-4 transition-colors ${liked ? 'fill-rose-500 text-rose-500' : 'text-white'}`} />

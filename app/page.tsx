@@ -4,12 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { fetchTrendingManga, searchManga, fetchMangaByIds, fetchMangaById, Manga } from '@/lib/anilist';
 import { getRecommendations, Recommendation } from '@/lib/ai-recommendations';
 import { useUser } from '@/lib/user-context';
-import { MangaCard } from '@/components/manga-card';
-import { MangaDetailsModal } from '@/components/manga-details-modal';
-import { UserProfile } from '@/components/user-profile';
-import { UserPreferencesModal } from '@/components/user-preferences-modal';
-import { Dashboard } from '@/components/dashboard';
-import { Search, Sparkles, TrendingUp, Settings, Loader2, BookOpen, Heart, History, LayoutDashboard } from 'lucide-react';
+import { MangaCard } from '@/components/features/manga-card';
+import { MangaDetailsModal } from '@/components/features/manga-details-modal';
+import { UserProfile } from '@/components/features/user-profile';
+import { UserPreferencesModal } from '@/components/features/user-preferences-modal';
+import { Dashboard } from '@/components/features/dashboard';
+import { Logo } from '@/components/layout/logo';
+import { Search, Sparkles, TrendingUp, Settings, Loader2, Heart, History, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 type Tab = 'discover' | 'mylist' | 'history' | 'dashboard';
@@ -138,18 +139,14 @@ export default function Home() {
       {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 shadow-lg shadow-indigo-500/20">
-              <BookOpen className="h-5 w-5 text-white" />
-            </div>
-            <span className="hidden sm:inline text-xl font-bold tracking-tight text-white">MangaAI</span>
-          </div>
+          <Logo size="md" />
           
           <div className="flex flex-1 items-center justify-center px-4 sm:px-8">
             <div className="relative w-full max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
               <input
                 type="text"
+                aria-label="Search anime and manga"
                 placeholder="Search manga..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -271,8 +268,10 @@ export default function Home() {
               Search Results for &quot;{searchQuery}&quot;
             </h2>
             {isSearching ? (
-              <div className="flex h-64 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+              <div role="status" aria-live="polite" aria-label="Loading search results" className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 animate-pulse">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={`search-skel-${i}`} className="aspect-[3/4] rounded-2xl glass-panel skeleton" />
+                ))}
               </div>
             ) : searchResults.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -342,8 +341,10 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <div className="flex h-64 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+              <div role="status" aria-live="polite" aria-label="Loading trending manga" className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 animate-pulse">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={`trending-skel-${i}`} className="aspect-[3/4] rounded-2xl glass-panel skeleton" />
+                ))}
               </div>
             )}
           </section>

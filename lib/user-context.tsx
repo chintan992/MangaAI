@@ -7,6 +7,7 @@ export type Rating = 1 | 2 | 3 | 4 | 5;
 
 export interface UserPreferences {
   favoriteGenres: string[];
+  enableAIRecommendations?: boolean;
 }
 
 export interface RecommendationHistoryItem {
@@ -55,6 +56,7 @@ const defaultState: UserState = {
   ratings: {},
   preferences: {
     favoriteGenres: [],
+    enableAIRecommendations: false,
   },
   recommendationHistory: [],
   aniListToken: null,

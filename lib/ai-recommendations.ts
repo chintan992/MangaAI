@@ -1,3 +1,5 @@
+'use server';
+
 import { GoogleGenAI, Type } from '@google/genai';
 import { Manga } from './anilist';
 
@@ -17,11 +19,12 @@ export async function getRecommendations(
   favoriteGenres: string[],
   options: RecommendationOptions = {}
 ): Promise<Recommendation[]> {
-  if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey) {
     throw new Error('Gemini API key is missing');
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
 
   const likedTitles = likedManga.map((m) => m.title.english || m.title.romaji).join(', ');
   const genres = favoriteGenres.join(', ');
@@ -52,10 +55,9 @@ export async function getRecommendations(
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-pro-preview',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
-        tools: [{ googleSearch: {} }],
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.ARRAY,
@@ -82,15 +84,20 @@ export async function getRecommendations(
 
     const recommendations: Recommendation[] = JSON.parse(text);
     return recommendations;
-  } catch (error) {
-    console.error('Error fetching recommendations from Gemini:', error);
+  } catch (error: any) {
+    if (error?.status === 429 || error?.message?.includes('429')) {
+      console.warn('Gemini API Rate Limit (429) hit. Please wait a moment or check your AI Studio quota.');
+    } else {
+      console.error('Error fetching recommendations from Gemini:', error?.message || error);
+    }
     return [];
   }
 }
 
 export async function getQuickPitch(title: string, description: string): Promise<string> {
-  if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) return '';
-  const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey) return '';
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-flash-lite-preview',

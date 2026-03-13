@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '@/lib/user-context';
 import { X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,6 +19,15 @@ interface UserPreferencesModalProps {
 export function UserPreferencesModal({ isOpen, onClose }: UserPreferencesModalProps) {
   const { state, updatePreferences } = useUser();
   const [selectedGenres, setSelectedGenres] = useState<string[]>(state.preferences.favoriteGenres);
+  const [enableAI, setEnableAI] = useState<boolean>(state.preferences.enableAIRecommendations || false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const toggleGenre = (genre: string) => {
     setSelectedGenres((prev) =>
@@ -29,7 +38,10 @@ export function UserPreferencesModal({ isOpen, onClose }: UserPreferencesModalPr
   };
 
   const handleSave = () => {
-    updatePreferences({ favoriteGenres: selectedGenres });
+    updatePreferences({ 
+      favoriteGenres: selectedGenres,
+      enableAIRecommendations: enableAI
+    });
     onClose();
   };
 
@@ -63,6 +75,21 @@ export function UserPreferencesModal({ isOpen, onClose }: UserPreferencesModalPr
           </div>
 
           <div className="p-6 md:p-8 overflow-y-auto">
+            
+            <div className="mb-8 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-white mb-1">Enable AI Features</h3>
+                <p className="text-xs text-indigo-200/70">Allow MangaAI to parse your AniList data and generate smart recommendations using Google Gemini. (Requires API Quota)</p>
+              </div>
+              <button
+                onClick={() => setEnableAI(!enableAI)}
+                className={`flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enableAI ? 'bg-indigo-500' : 'bg-zinc-700'}`}
+              >
+                <div className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${enableAI ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
+            <h3 className="text-sm font-bold text-white mb-2">Favorite Genres</h3>
             <p className="mb-6 text-sm text-zinc-400 leading-relaxed">
               Select your favorite genres to help our AI engine tailor recommendations specifically for you.
             </p>

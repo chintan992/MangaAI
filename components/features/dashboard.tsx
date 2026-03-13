@@ -5,9 +5,16 @@ import { useUser } from '@/lib/user-context';
 import { fetchUserDashboardData, fetchUserActivity } from '@/lib/anilist-dashboard';
 import { Loader2, Tv, BookOpen, Clock, Star, Calendar, Activity, Heart } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import Image from 'next/image';
 import { motion } from 'motion/react';
+import dynamic from 'next/dynamic';
+import { DashboardAIRecommendations } from '@/components/features/dashboard-ai-recommendations';
+
+// Dynamically import the chart components to reduce initial bundle size
+const DynamicChart = dynamic<any>(() => import('@/components/features/dashboard-chart').then(mod => mod.DashboardChart), {
+  ssr: false,
+  loading: () => <div className="h-48 w-full skeleton" />
+});
 
 export function Dashboard({ onSelectMedia }: { onSelectMedia?: (id: number) => void }) {
   const { state } = useUser();
@@ -51,9 +58,36 @@ export function Dashboard({ onSelectMedia }: { onSelectMedia?: (id: number) => v
 
   if (loading) {
     return (
-      <div className="flex h-96 flex-col items-center justify-center space-y-4">
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-        <p className="text-sm font-medium text-zinc-500 animate-pulse">Syncing your AniList data...</p>
+      <div role="status" aria-live="polite" aria-label="Loading dashboard" className="space-y-8 animate-pulse">
+        {/* Banner Skeleton */}
+        <div className="h-48 w-full rounded-[2rem] glass-panel" />
+        
+        {/* Stats Grid Skeleton */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 rounded-[2rem] glass-panel" />
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Main List Skeleton */}
+          <div className="space-y-8 lg:col-span-2">
+            <div>
+              <div className="mb-6 h-8 w-48 rounded-lg skeleton" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-32 rounded-2xl glass-panel" />
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Sidebar Skeleton */}
+          <div className="space-y-8">
+            <div className="h-96 rounded-[2rem] glass-panel" />
+            <div className="h-64 rounded-[2rem] glass-panel" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -114,6 +148,7 @@ export function Dashboard({ onSelectMedia }: { onSelectMedia?: (id: number) => v
               src={Viewer.bannerImage} 
               alt="Banner" 
               fill 
+              sizes="100vw"
               className="object-cover opacity-30 blur-sm" 
               referrerPolicy="no-referrer"
             />
@@ -129,6 +164,7 @@ export function Dashboard({ onSelectMedia }: { onSelectMedia?: (id: number) => v
               src={Viewer.avatar.large} 
               alt={Viewer.name} 
               fill 
+              sizes="112px"
               className="object-cover" 
               referrerPolicy="no-referrer"
             />
@@ -226,6 +262,7 @@ export function Dashboard({ onSelectMedia }: { onSelectMedia?: (id: number) => v
                       src={item.coverImage.large} 
                       alt={item.title.english || item.title.romaji}
                       fill
+                      sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 16vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-110"
                       referrerPolicy="no-referrer"
                     />
@@ -243,9 +280,16 @@ export function Dashboard({ onSelectMedia }: { onSelectMedia?: (id: number) => v
           )}
         </div>
 
-        {/* Right Column: Activity & Upcoming */}
+        {/* Right Column: Activity & Upcoming & AI */}
         <div className="space-y-8">
           
+          {/* AI Suggested for You */}
+          <DashboardAIRecommendations 
+            onSelectMedia={onSelectMedia} 
+            favorites={[...Viewer.favourites.anime.nodes, ...Viewer.favourites.manga.nodes]} 
+            current={[...watching, ...reading].map(e => e.media)} 
+          />
+
           {/* Upcoming Releases */}
           {upcoming.length > 0 && (
             <motion.section variants={itemVariants} className="overflow-hidden rounded-[2rem] border border-white/5 bg-white/[0.02] p-6 backdrop-blur-sm">
@@ -270,6 +314,7 @@ export function Dashboard({ onSelectMedia }: { onSelectMedia?: (id: number) => v
                           src={entry.media.coverImage.large} 
                           alt={entry.media.title.english || entry.media.title.romaji}
                           fill
+                          sizes="40px"
                           className="object-cover transition-transform duration-500 group-hover:scale-110"
                           referrerPolicy="no-referrer"
                         />
@@ -311,6 +356,7 @@ export function Dashboard({ onSelectMedia }: { onSelectMedia?: (id: number) => v
                           src={activity.media.coverImage.medium} 
                           alt={activity.media.title.english || activity.media.title.romaji}
                           fill
+                          sizes="40px"
                           className="object-cover"
                           referrerPolicy="no-referrer"
                         />
@@ -337,22 +383,7 @@ export function Dashboard({ onSelectMedia }: { onSelectMedia?: (id: number) => v
           <motion.section variants={itemVariants} className="overflow-hidden rounded-[2rem] border border-white/5 bg-white/[0.02] p-6 backdrop-blur-sm">
             <h2 className="mb-6 text-lg font-bold tracking-tight text-white">Library Breakdown</h2>
             <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 12, fontWeight: 500 }} width={60} />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}
-                    itemStyle={{ fontWeight: 600 }}
-                  />
-                  <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={28}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <DynamicChart data={chartData} />
             </div>
           </motion.section>
 
@@ -393,6 +424,7 @@ function ProgressCard({ entry, type, onClick }: { entry: any, type: 'anime' | 'm
           src={entry.media.coverImage.large} 
           alt={entry.media.title.english || entry.media.title.romaji}
           fill
+          sizes="64px"
           className="object-cover transition-transform duration-500 group-hover:scale-110"
           referrerPolicy="no-referrer"
         />

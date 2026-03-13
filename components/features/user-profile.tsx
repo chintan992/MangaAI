@@ -71,6 +71,7 @@ export function UserProfile() {
               src={state.aniListUser.avatar.medium} 
               alt={state.aniListUser.name} 
               fill
+              sizes="28px"
               className="object-cover"
             />
           </div>

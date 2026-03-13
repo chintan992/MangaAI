@@ -18,3 +18,30 @@
     display: none;
   }
 }
+
+@utility glass-panel {
+  background-color: theme('colors.white / 2%');
+  border: 1px solid theme('colors.white / 5%');
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@utility skeleton {
+  background-color: theme('colors.white / 5%');
+  border-radius: theme('borderRadius.2xl');
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@utility glass-panel-interactive {
+  background-color: theme('colors.white / 2%');
+  border: 1px solid theme('colors.white / 5%');
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    background-color: theme('colors.white / 4%');
+    border-color: theme('colors.white / 10%');
+    box-shadow: theme('boxShadow.xl');
+  }
+}
