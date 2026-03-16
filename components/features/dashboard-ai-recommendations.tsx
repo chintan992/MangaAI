@@ -64,7 +64,8 @@ export function DashboardAIRecommendations({
             options: {
               previouslyRecommended,
               highlyRated: [], // Mocking for now to save API calls
-              poorlyRated: []
+              poorlyRated: [],
+              enableWebSearch: state.preferences.enableWebSearch ?? false,
             }
           }),
         });

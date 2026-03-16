@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/index.mjs';
 import { Manga } from './anilist';
 
 export interface Recommendation {
@@ -10,6 +11,7 @@ export interface RecommendationOptions {
   previouslyRecommended?: string[];
   highlyRated?: string[];
   poorlyRated?: string[];
+  enableWebSearch?: boolean;
 }
 
 export async function getRecommendations(
@@ -65,19 +67,95 @@ export async function getRecommendations(
   `;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "qwen/qwen3-coder-480b-a35b-instruct",
-      messages: [{"role":"user","content":prompt}],
-      temperature: 0.7,
-      top_p: 0.8,
-      max_tokens: 4096,
-      response_format: { type: "json_object" }
-    });
+    const webSearchTool: ChatCompletionTool = {
+      type: "function",
+      function: {
+        name: "search_web",
+        description: "Search the web for up-to-date information, news, reviews, and latest releases about manga.",
+        parameters: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "The search query to look up on the web."
+            }
+          },
+          required: ["query"]
+        }
+      }
+    };
 
-    const text = completion.choices[0]?.message?.content;
-    if (!text) return [];
+    const tools: ChatCompletionTool[] = options.enableWebSearch ? [webSearchTool] : [];
 
-    let parsedText = text.trim();
+    let messages: ChatCompletionMessageParam[] = [{"role":"user","content":prompt}];
+    let finalContent = null;
+    let iterations = 0;
+    const MAX_ITERATIONS = 5;
+
+    while (iterations < MAX_ITERATIONS && !finalContent) {
+      const completion = await openai.chat.completions.create({
+        model: "qwen/qwen3-coder-480b-a35b-instruct",
+        messages: messages,
+        temperature: 0.7,
+        top_p: 0.8,
+        max_tokens: 4096,
+        ...(tools.length > 0 ? { tools, tool_choice: "auto" } : {}),
+      });
+
+      const responseMessage = completion.choices[0]?.message;
+      if (!responseMessage) break;
+
+      messages.push(responseMessage); // Add assistant response to history
+
+      if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+        // AI decided to call a tool
+        for (const toolCall of responseMessage.tool_calls) {
+          if ((toolCall as any).function.name === 'search_web') {
+            try {
+              const args = JSON.parse((toolCall as any).function.arguments);
+              console.log(`Executing web search for: "${args.query}"`);
+              
+              const searchResponse = await fetch('https://api.tavily.com/search', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  api_key: process.env.TAVILY_API_KEY,
+                  query: args.query,
+                  include_answer: true,
+                  search_depth: "basic",
+                })
+              });
+
+              const searchData = await searchResponse.json();
+              const resultString = searchData.answer || searchData.results?.map((r: any) => `[${r.title}](${r.url}): ${r.content}`).join('\\n') || "No results found.";
+
+              messages.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                content: resultString
+              });
+            } catch (err: any) {
+              console.error("Tool execution failed:", err);
+              messages.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                content: "Error performing search."
+              });
+            }
+          }
+        }
+      } else {
+        // AI provided a final answer
+        finalContent = responseMessage.content;
+      }
+      iterations++;
+    }
+
+    if (!finalContent) return [];
+
+    let parsedText = finalContent.trim();
     if (parsedText.startsWith('```json')) {
       parsedText = parsedText.replace(/^```json\n/, '').replace(/\n```$/, '');
     } else if (parsedText.startsWith('```')) {

@@ -20,6 +20,7 @@ export function UserPreferencesModal({ isOpen, onClose }: UserPreferencesModalPr
   const { state, updatePreferences } = useUser();
   const [selectedGenres, setSelectedGenres] = useState<string[]>(state.preferences.favoriteGenres);
   const [enableAI, setEnableAI] = useState<boolean>(state.preferences.enableAIRecommendations || false);
+  const [enableWebSearch, setEnableWebSearch] = useState<boolean>(state.preferences.enableWebSearch || false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,7 +41,8 @@ export function UserPreferencesModal({ isOpen, onClose }: UserPreferencesModalPr
   const handleSave = () => {
     updatePreferences({ 
       favoriteGenres: selectedGenres,
-      enableAIRecommendations: enableAI
+      enableAIRecommendations: enableAI,
+      enableWebSearch,
     });
     onClose();
   };
@@ -86,6 +88,23 @@ export function UserPreferencesModal({ isOpen, onClose }: UserPreferencesModalPr
                 className={`flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enableAI ? 'bg-indigo-500' : 'bg-zinc-700'}`}
               >
                 <div className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${enableAI ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
+            <div className="mb-8 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-white mb-1">🔍 Enable Web Search</h3>
+                <p className="text-xs text-violet-200/70">Allow the AI to search the web in real-time for the latest manga releases, news, and trending titles before making recommendations. Increases response time.</p>
+              </div>
+              <button
+                disabled={!enableAI}
+                onClick={() => setEnableWebSearch(!enableWebSearch)}
+                className={`flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                  !enableAI ? 'opacity-40 cursor-not-allowed bg-zinc-700' :
+                  enableWebSearch ? 'bg-violet-500' : 'bg-zinc-700'
+                }`}
+              >
+                <div className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${enableWebSearch && enableAI ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
 

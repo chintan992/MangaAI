@@ -96,7 +96,8 @@ export default function Home() {
           options: {
             previouslyRecommended,
             highlyRated,
-            poorlyRated
+            poorlyRated,
+            enableWebSearch: state.preferences.enableWebSearch ?? false,
           }
         }),
       });
