@@ -1,14 +1,38 @@
 import type {NextConfig} from 'next';
-import withPWAInit from 'next-pwa';
+import withPWAInit from '@ducanh2912/next-pwa';
 
 const withPWA = withPWAInit({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
   register: true,
-  skipWaiting: true,
 });
 
 const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
+  },
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,

@@ -7,6 +7,7 @@ import { X, Heart, Star, BookOpen, Layers, Loader2, Sparkles } from 'lucide-reac
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { getQuickPitch } from '@/lib/ai-recommendations';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface MangaDetailsModalProps {
   manga: Manga | null;
@@ -177,7 +178,7 @@ export function MangaDetailsModal({ manga, onClose, onSelectRelated }: MangaDeta
 
             <div
               className="prose prose-invert max-w-none text-zinc-300 mb-8 text-sm leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: manga.description || 'No description available.' }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(manga.description || 'No description available.') }}
             />
 
             {/* Relations */}

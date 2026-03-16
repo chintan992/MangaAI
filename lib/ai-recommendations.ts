@@ -19,7 +19,7 @@ export async function getRecommendations(
   favoriteGenres: string[],
   options: RecommendationOptions = {}
 ): Promise<Recommendation[]> {
-  const apiKey = process.env.NVIDIA_API_KEY || process.env.NEXT_PUBLIC_NVIDIA_API_KEY;
+  const apiKey = process.env.NVIDIA_API_KEY;
   if (!apiKey) {
     throw new Error('NVIDIA API key is missing');
   }
@@ -99,7 +99,7 @@ export async function getRecommendations(
 }
 
 export async function getQuickPitch(title: string, description: string): Promise<string> {
-  const apiKey = process.env.NVIDIA_API_KEY || process.env.NEXT_PUBLIC_NVIDIA_API_KEY;
+  const apiKey = process.env.NVIDIA_API_KEY;
   if (!apiKey) return '';
   const openai = new OpenAI({
     apiKey,
