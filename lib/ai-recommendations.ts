@@ -1,6 +1,6 @@
 'use server';
 
-import { GoogleGenAI, Type } from '@google/genai';
+import OpenAI from 'openai';
 import { Manga } from './anilist';
 
 export interface Recommendation {
@@ -19,12 +19,15 @@ export async function getRecommendations(
   favoriteGenres: string[],
   options: RecommendationOptions = {}
 ): Promise<Recommendation[]> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const apiKey = process.env.NVIDIA_API_KEY || process.env.NEXT_PUBLIC_NVIDIA_API_KEY;
   if (!apiKey) {
-    throw new Error('Gemini API key is missing');
+    throw new Error('NVIDIA API key is missing');
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  const openai = new OpenAI({
+    apiKey,
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+  });
 
   const likedTitles = likedManga.map((m) => m.title.english || m.title.romaji).join(', ');
   const genres = favoriteGenres.join(', ');
@@ -50,60 +53,66 @@ export async function getRecommendations(
     - Avoid recommending anything similar to the poorly rated manga.
     
     OUTPUT FORMAT:
-    Provide a brief, compelling reason for each recommendation (1-2 sentences) explaining exactly why this user would like it based on their profile.
+    Your response must be a valid JSON object containing a "recommendations" array. Each item must have a "title" and a "reason".
+    Example:
+    {
+      "recommendations": [
+        {
+          "title": "Manga Title",
+          "reason": "Reason for recommendation (1-2 sentences)."
+        }
+      ]
+    }
+    Return ONLY valid JSON. Do not include markdown code blocks.
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: {
-                type: Type.STRING,
-                description: 'The exact title of the recommended manga (preferably the Romaji or English title as it appears on Anilist).',
-              },
-              reason: {
-                type: Type.STRING,
-                description: 'A brief, personalized reason why this manga is recommended based on the user profile.',
-              },
-            },
-            required: ['title', 'reason'],
-          },
-        },
-      },
+    const completion = await openai.chat.completions.create({
+      model: "qwen/qwen3-coder-480b-a35b-instruct",
+      messages: [{"role":"user","content":prompt}],
+      temperature: 0.7,
+      top_p: 0.8,
+      max_tokens: 4096,
+      response_format: { type: "json_object" }
     });
 
-    const text = response.text;
+    const text = completion.choices[0]?.message?.content;
     if (!text) return [];
 
-    const recommendations: Recommendation[] = JSON.parse(text);
-    return recommendations;
+    let parsedText = text.trim();
+    if (parsedText.startsWith('```json')) {
+      parsedText = parsedText.replace(/^```json\n/, '').replace(/\n```$/, '');
+    } else if (parsedText.startsWith('```')) {
+      parsedText = parsedText.replace(/^```\n/, '').replace(/\n```$/, '');
+    }
+
+    const parsed = JSON.parse(parsedText);
+    return parsed.recommendations || [];
   } catch (error: any) {
     if (error?.status === 429 || error?.message?.includes('429')) {
-      console.warn('Gemini API Rate Limit (429) hit. Please wait a moment or check your AI Studio quota.');
+      console.warn('NVIDIA API Rate Limit (429) hit. Please wait a moment.');
     } else {
-      console.error('Error fetching recommendations from Gemini:', error?.message || error);
+      console.error('Error fetching recommendations from NVIDIA NIM:', error?.message || error);
     }
     return [];
   }
 }
 
 export async function getQuickPitch(title: string, description: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const apiKey = process.env.NVIDIA_API_KEY || process.env.NEXT_PUBLIC_NVIDIA_API_KEY;
   if (!apiKey) return '';
-  const ai = new GoogleGenAI({ apiKey });
+  const openai = new OpenAI({
+    apiKey,
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+  });
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite-preview',
-      contents: `Give a punchy, exciting 1-sentence pitch for the manga "${title}" based on this description: ${description}`,
+    const completion = await openai.chat.completions.create({
+      model: "qwen/qwen3-coder-480b-a35b-instruct",
+      messages: [{"role":"user","content":`Give a punchy, exciting 1-sentence pitch for the manga "${title}" based on this description: ${description}`}],
+      temperature: 0.7,
+      max_tokens: 256,
     });
-    return response.text || '';
+    return completion.choices[0]?.message?.content || '';
   } catch (e) {
     console.error('Error fetching quick pitch:', e);
     return '';
