@@ -6,7 +6,7 @@ import { useUser, Rating } from '@/lib/user-context';
 import { X, Heart, Star, BookOpen, Layers, Loader2, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { getQuickPitch } from '@/lib/ai-recommendations';
+
 import DOMPurify from 'isomorphic-dompurify';
 
 interface MangaDetailsModalProps {
@@ -42,7 +42,13 @@ export function MangaDetailsModal({ manga, onClose, onSelectRelated }: MangaDeta
 
   const handleGetPitch = async () => {
     setIsFetchingPitch(true);
-    const pitch = await getQuickPitch(title, manga.description || '');
+    const res = await fetch('/api/quick-pitch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description: manga.description || '' }),
+    });
+    if (!res.ok) throw new Error('Failed to fetch quick pitch');
+    const { pitch } = await res.json();
     setQuickPitch(pitch);
     setIsFetchingPitch(false);
   };

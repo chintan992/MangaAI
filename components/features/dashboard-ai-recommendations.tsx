@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { getRecommendations } from '@/lib/ai-recommendations';
+
 import { searchManga, Manga } from '@/lib/anilist';
 import { MangaCard } from '@/components/features/manga-card';
 import { Sparkles, Loader2 } from 'lucide-react';
@@ -55,11 +55,22 @@ export function DashboardAIRecommendations({
         
         const previouslyRecommended = state.recommendationHistory.flatMap(h => h.recommendations.map(r => r.title));
 
-        const recs = await getRecommendations(combined, state.preferences.favoriteGenres || [], {
-          previouslyRecommended,
-          highlyRated: [], // Mocking for now to save API calls
-          poorlyRated: []
+        const res = await fetch('/api/recommendations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            likedManga: combined,
+            favoriteGenres: state.preferences.favoriteGenres || [],
+            options: {
+              previouslyRecommended,
+              highlyRated: [], // Mocking for now to save API calls
+              poorlyRated: []
+            }
+          }),
         });
+
+        if (!res.ok) throw new Error('Failed to fetch recommendations');
+        const { recommendations: recs } = await res.json() as { recommendations: { title: string, reason: string }[] };
 
         if (recs.length > 0) {
           // Limit to 3 for the dashboard row

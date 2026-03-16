@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { fetchTrendingManga, searchManga, fetchMangaByIds, fetchMangaById, Manga } from '@/lib/anilist';
-import { getRecommendations, Recommendation } from '@/lib/ai-recommendations';
+import { Recommendation } from '@/lib/ai-recommendations';
 import { useUser } from '@/lib/user-context';
 import { MangaCard } from '@/components/features/manga-card';
 import { MangaDetailsModal } from '@/components/features/manga-details-modal';
@@ -87,11 +87,23 @@ export default function Home() {
       
       const previouslyRecommended = state.recommendationHistory.flatMap(h => h.recommendations.map(r => r.title));
       
-      const recs = await getRecommendations(likedMangaDetails, state.preferences.favoriteGenres, {
-        previouslyRecommended,
-        highlyRated,
-        poorlyRated
+      const res = await fetch('/api/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          likedManga: likedMangaDetails,
+          favoriteGenres: state.preferences.favoriteGenres,
+          options: {
+            previouslyRecommended,
+            highlyRated,
+            poorlyRated
+          }
+        }),
       });
+
+      if (!res.ok) throw new Error('Failed to fetch recommendations');
+      
+      const { recommendations: recs } = await res.json() as { recommendations: Recommendation[] };
       
       if (recs.length > 0) {
         // Search Anilist for the recommended titles
